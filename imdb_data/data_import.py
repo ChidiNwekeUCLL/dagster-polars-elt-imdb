@@ -14,6 +14,14 @@ retry_policy = RetryPolicy(
 
 
 def create_write_path(name: str) -> str:
+    """
+    Create the path for the file to be written to the bronze layer of the data lake.
+    Args:
+        name (str): The name of the file. (e.g. "title.akas")
+
+    Returns:
+        str: The path to write the file to.
+    """
     month_num = datetime.datetime.now().month
     year_num = datetime.datetime.now().year
     day_num = datetime.datetime.now().day
@@ -22,6 +30,13 @@ def create_write_path(name: str) -> str:
 
 
 def download_dataset(url: str, name: str) -> None:
+    """
+    Download a dataset from a URL and write it to the bronze layer of the data lake.
+
+    Args:
+        url (str): The URL of the dataset to download.
+        name (str): The name of the file to write.
+    """
     response = requests.get(url).content
     path = create_write_path(name)
     response_file = BytesIO(response)
