@@ -13,9 +13,16 @@ def make_minio_client():
         load_dotenv("config.env")
     access_key = os.getenv("MINIO_ROOT_USER")
     secret_key = os.getenv("MINIO_ROOT_PASSWORD")
+    minio_uri = os.getenv("MINIO_URI")
+    if not access_key:
+        raise ValueError("MINIO_ROOT_USER not set")
+    if not secret_key:
+        raise ValueError("MINIO_ROOT_PASSWORD not set")
+    if not minio_uri:
+        minio_uri = "localhost:9000"
 
     return Minio(
-        endpoint="minio:9000",
+        endpoint=minio_uri,
         access_key=access_key,
         secret_key=secret_key,
         secure=False,
@@ -55,7 +62,6 @@ def write_to_bucket(file_name: str, data: io.BytesIO) -> None:
 def download_files_from_bucket(
     source: str, layer: LakeLayer | None
 ) -> list[tuple[str, bytes]]:
-    """Download gzipped files from a bucket and return them as a list of bytes."""
     client = make_minio_client()
     file_names = get_file_names_from_bucket(source, layer)
     res = []

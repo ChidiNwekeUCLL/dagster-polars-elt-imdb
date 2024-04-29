@@ -1,7 +1,9 @@
 import datetime
+from io import BytesIO
 import requests
-from pathlib import Path
 from dagster import Backoff, Jitter, RetryPolicy, asset
+
+from imdb_data.storage import write_to_bucket
 
 retry_policy = RetryPolicy(
     max_retries=3,
@@ -14,17 +16,16 @@ retry_policy = RetryPolicy(
 def create_write_path(name: str) -> str:
     month_num = datetime.datetime.now().month
     year_num = datetime.datetime.now().year
-    path = f"data-lake/bronze/{name}/{year_num}/{month_num}"
-    Path(path).mkdir(parents=True, exist_ok=True)
+    day_num = datetime.datetime.now().day
+    path = f"bronze/{name}/{year_num}/{month_num}-{day_num}.tsv.gz"
     return path
 
 
 def download_dataset(url: str, name: str) -> None:
-    r = requests.get(url)
-    day = datetime.datetime.now().day
+    response = requests.get(url).content
     path = create_write_path(name)
-    with open(f"{path}/{day}.tsv.tgz", "wb") as f:
-        f.write(r.content)
+    response_file = BytesIO(response)
+    write_to_bucket(path, response_file)
 
 
 @asset(retry_policy=retry_policy)
