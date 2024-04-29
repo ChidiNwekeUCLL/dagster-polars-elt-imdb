@@ -1,24 +1,14 @@
-import gzip
-from pathlib import Path
 from dagster import graph_asset, op
 import polars as pl
-from io import StringIO
+from io import StringIO, BytesIO
 import polars.selectors as cs
 import datetime
 
-
-def ungzip_file(file_path: str) -> str:
-    with gzip.open(file_path, "rt") as f_in:
-        return f_in.read()
+from imdb_data.storage import read_bronze, write_to_bucket
 
 
 def read_source(source: str) -> dict[str, str]:
-    source = f"data-lake/bronze/{source}"
-    source_path = Path(source)
-    if not source_path.exists():
-        raise ValueError(f"Source {source} does not exist")
-    files_to_process = list(source_path.glob("**/*.tsv.tgz"))
-    return {source: ungzip_file(str(file_path)) for file_path in files_to_process}
+    return read_bronze(source)
 
 
 def source_data_to_df(source_data: dict[str, str]) -> pl.LazyFrame:
@@ -40,9 +30,10 @@ def write_df_to_parquet(df: pl.LazyFrame, name: str) -> None:
     month_num = datetime.datetime.now().month
     year_num = datetime.datetime.now().year
     day_num = datetime.datetime.now().day
-    path = f"data-lake/silver/{name}/{year_num}/{month_num}/{day_num}"
-    Path(path).mkdir(parents=True, exist_ok=True)
-    df.collect().write_parquet(f"{path}/{name}.parquet")
+    path = f"silver/{name}/{year_num}/{month_num}-{day_num}.parquet"
+    parquet_data = BytesIO()
+    df.collect().write_parquet(parquet_data)
+    write_to_bucket(path, parquet_data)
 
 
 @op
