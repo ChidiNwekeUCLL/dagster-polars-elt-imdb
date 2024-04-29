@@ -31,9 +31,11 @@ def write_df_to_parquet(df: pl.LazyFrame, name: str) -> None:
     year_num = datetime.datetime.now().year
     day_num = datetime.datetime.now().day
     path = f"silver/{name}/{year_num}/{month_num}-{day_num}.parquet"
-    parquet_data = BytesIO()
-    df.collect().write_parquet(parquet_data)
-    write_to_bucket(path, parquet_data)
+    buffer = BytesIO()
+    df_ = df.collect()
+    df_.write_parquet(buffer)
+    buffer.seek(0)
+    write_to_bucket(path, buffer)
 
 
 @op
