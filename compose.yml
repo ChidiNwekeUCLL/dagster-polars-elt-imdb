@@ -11,5 +11,17 @@ services:
     volumes:
       - minio_data:/data
 
+  dagster:
+    build: .
+    env_file:
+      - config.env
+    environment:
+      - DAGSTER_HOME=/dagster/dagster_home
+    volumes:
+      - dagster_data:/dagster
+    ports:
+      - "3000:3000"
+
 volumes:
   minio_data:
+  dagster_data:
