@@ -111,6 +111,8 @@ def write_to_bucket(file_name: str, data: io.BytesIO) -> None:
         data (io.BytesIO): The file content as a BytesIO object.
     """
     client = make_minio_client()
+    if not client.bucket_exists("imdb-data"):
+        client.make_bucket("imdb-data")
     part_size = 10 * 1024 * 1024
     client.put_object("imdb-data", file_name, data, length=-1, part_size=part_size)
 
